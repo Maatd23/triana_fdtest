@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  username      String
+  email         String   @unique
+  passwordHash  String
+  role          String   @default("Customer")
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+  books         Book[]
+}
+
+model EmailToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String
+  type      TokenType
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+enum TokenType {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  jti       String   @unique
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Book {
+  id          String   @id @default(cuid())
+  title       String
+  author      String
+  description String
+  coverUrl    String?
+  rating      Int      @default(0)
+  uploadedBy  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [uploadedBy], references: [id])
+
+  @@index([author])
+  @@index([createdAt])
+  @@index([rating])
+}
