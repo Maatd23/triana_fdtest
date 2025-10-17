@@ -1,29 +1,19 @@
 import { Request, Response } from "express";
-import { prisma } from "../../db/prisma";
+import * as users from "./users.service";
 
 export const me = async (req: Request, res: Response) => {
   const id = (req as any).user.id;
-  const u = await prisma.user.findUnique({
-    where: { id },
-    select: { username: true, email: true, emailVerified: true },
-  });
-  res.json(u);
+  const data = await users.getMe(id);
+  return res.json(data);
 };
 
 export const list = async (req: Request, res: Response) => {
-  const { q, verified } = req.query;
-  const where: any = {};
-  if (typeof verified !== "undefined")
-    where.emailVerified = String(verified) === "true";
-  if (q)
-    where.OR = [
-      { username: { contains: String(q), mode: "insensitive" } },
-      { email: { contains: String(q), mode: "insensitive" } },
-    ];
-  const users = await prisma.user.findMany({
-    where,
-    select: { id: true, username: true, email: true, emailVerified: true },
-    orderBy: { username: "asc" },
-  });
-  res.json(users);
+  const q = req.query.q ? String(req.query.q) : undefined;
+  const verified =
+    typeof req.query.verified !== "undefined"
+      ? String(req.query.verified) === "true"
+      : undefined;
+
+  const data = await users.listUsers({ q, verified });
+  return res.json(data);
 };
