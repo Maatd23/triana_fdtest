@@ -1,12 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { env } from "../config/env";
+import { verifyAccess } from "../utils/jwt";
 
 export function auth(req: Request, res: Response, next: NextFunction) {
   const h = req.headers.authorization || "";
   const token = h.startsWith("Bearer ") ? h.slice(7) : "";
   try {
-    const payload = jwt.verify(token, env.jwtAccess) as any;
+    const payload = verifyAccess(token) as any;
     (req as any).user = { id: payload.id };
     next();
   } catch {
